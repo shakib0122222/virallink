@@ -1,0 +1,18 @@
+{
+  "hosting": {
+    "public": "public",
+    "rewrites": [
+      {
+        "source": "/src/v.html",
+        "destination": "/src/v.html"
+      }
+    ],
+    "redirects": [
+      {
+        "source": "/v",
+        "destination": "/src/v.html",
+        "type": 301
+      }
+    ]
+  }
+}
