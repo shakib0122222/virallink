@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pixguard URL Shortener</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <style>
+    body {font-family: 'Segoe UI', sans-serif; background:#fff; margin:0; padding:0; color:#333;}
+    header {background: linear-gradient(135deg, #667eea, #764ba2); color:white; text-align:center; padding:30px 15px;}
+    h1 {margin:0; font-size:2.2rem;}
+    .subtitle {font-size:1.2rem; margin:10px 0 30px;}
+    .container {max-width:600px; margin:30px auto; padding:20px; background:#f9f9f9; border-radius:12px; box-shadow:0 5px 15px rgba(0,0,0,0.1);}
+    input, button {width:100%; padding:14px; margin:10px 0; border-radius:8px; border:1px solid #ddd; font-size:1rem;}
+    button {background:#667eea; color:white; border:none; cursor:pointer; font-weight:bold;}
+    button:hover {background:#5a6fd8;}
+    #shortUrl {background:#e6f0ff; padding:15px; border-radius:8px; word-break:break-all; margin-top:20px; display:none;}
+    .stats {text-align:center; font-size:1.3rem; margin:30px 0; color:#555;}
+    footer {text-align:center; padding:20px; background:#333; color:white;}
+    @media (max-width:480px) {h1{font-size:1.8rem;} .container{padding:15px;}}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pixguard URL Shortener</h1>
+    <p class="subtitle">Shorten Your Long URL Easily Here</p>
+  </header>
+
+  <div class="container">
+    <input type="url" id="contentUrl" placeholder="Enter Content Link (Video/Download)" required />
+    <input type="url" id="adUrl" placeholder="Enter Ad URL (Redirects here first)" required />
+    <input type="file" id="image" accept="image/*" />
+    <button onclick="shortenUrl()">Generate Short Link</button>
+
+    <div id="shortUrl"></div>
+  </div>
+
+  <div class="stats">Total Visits: <span id="totalVisits">0</span></div>
+
+  <footer>© 2025 Pixguard</footer>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpv3NaTYjrmeoN19itDACcvEpMggd72H8",
+      authDomain: "url-c576f.firebaseapp.com",
+      projectId: "url-c576f",
+      storageBucket: "url-c576f.firebasestorage.app",
+      messagingSenderId: "681639648878",
+      appId: "1:681639648878:web:31d36b7e0c8031c806d07f",
+      measurementId: "G-HKS96B2T7T"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // লাইভ টোটাল ভিজিট কাউন্ট
+    db.collection("stats").doc("visits").onSnapshot(doc => {
+      const data = doc.data() || {count: 0};
+      document.getElementById("totalVisits").innerText = data.count;
+    });
+
+    async function shortenUrl() {
+      const contentUrl = document.getElementById("contentUrl").value.trim();
+      const adUrl = document.getElementById("adUrl").value.trim();
+      const imageFile = document.getElementById("image").files[0];
+
+      if (!contentUrl || !adUrl || !imageFile) {
+        alert("সব ফিল্ড পূরণ করুন!");
+        return;
+      }
+
+      const shortCode = Math.random().toString(36).substring(2, 8);
+      const shortLink = `${window.location.origin}/src/v.html?id=${shortCode}`;
+
+      // ইমেজ Firebase Storage-এ আপলোড
+      const storageRef = firebase.storage().ref('images/' + shortCode);
+      await storageRef.put(imageFile);
+      const imageUrl = await storageRef.getDownloadURL();
+
+      // ডাটা Firestore-এ সেভ
+      await db.collection("links").doc(shortCode).set({
+        contentUrl,
+        adUrl,
+        imageUrl,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // টোটাল ভিজিট +১ (পরে v.html থেকে করবো)
+      document.getElementById("shortUrl").style.display = "block";
+      document.getElementById("shortUrl").innerHTML = `
+        <strong>Your Short Link:</strong><br>
+        <a href="${shortLink}" target="_blank">${shortLink}</a>
+        <button onclick="navigator.clipboard.writeText('${shortLink}').then(()=>alert('Copied!'))" style="margin-top:10px;padding:10px;">
+          Copy Link
+        </button>
+      `;
+    }
+  </script>
+</body>
+</html>
