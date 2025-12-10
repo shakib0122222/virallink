@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pixguard – Your Content</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+  <style>
+    body {margin:0; font-family:sans-serif; background:#fff; text-align:center;}
+    .img-container img {width:100%; max-height:400px; object-fit:cover;}
+    .btn-group {margin:20px 0;}
+    .btn {padding:15px 30px; margin:10px; font-size:1.2rem; border:none; border-radius:10px; cursor:pointer;}
+    .primary {background:#28a745; color:white;}
+    .secondary {background:#dc3545; color:white;}
+    .ad-banner {margin:30px auto; width:90%; max-width:336px; height:280px; background:#eee; display:flex; align-items:center; justify-content:center; font-size:1.2rem; color:#666;}
+    .note {background:#f0f0f0; padding:20px; margin:20px; border-radius:10px; text-align:left; line-height:1.8;}
+    #countdown {font-size:3rem; font-weight:bold; color:#667eea; margin:50px 0;}
+    #getLinkBtn {display:none; padding:18px 40px; font-size:1.4rem; background:#667eea; color:white; border:none; border-radius:12px;}
+  </style>
+</head>
+<body>
+  <div class="img-container"><img id="previewImg" src="" alt="Preview"></div>
+
+  <div class="btn-group">
+    <button class="btn primary" onclick="goToAd()">Watch Now</button>
+    <button class="btn secondary" onclick="goToAd()">Download</button>
+  </div>
+
+  <div class="btn-group">
+    <button class="btn" style="background:#ff9800;" onclick="goToAd()">Continue →</button>
+    <button class="btn" style="background:#9c27b0;" onclick="goToAd()">Get Link</button>
+  </div>
+
+  <!-- Adsterra Banner Place -->
+  <div class="ad-banner">
+    <p>Adsterra Banner Here (336x280)</p>
+  </div>
+
+  <div class="note">
+    <strong>কিভাবে ভিডিও/ফাইল ডাউনলোড করবেন:</strong><br>
+    “Continue” বাটনে ক্লিক করুন।<br>
+    এড এ রিডাইরেক্ট করলে Back করুন।<br>
+    ৫–৮ সেকেন্ড অপেক্ষা করুন।<br>
+    “Get Link” আসলে ক্লিক দিন।<br>
+    আবার Back করে Get Link চাপুন।<br>
+    <b>নোট:</b> ভুল পেজ এ নিলে ব্যাক করুন।
+  </div>
+
+  <button id="finalBtn">Click Here to Continue</button>
+
+  <div id="countdown">5</div>
+  <button id="getLinkBtn" onclick="finalRedirect()">Get Link</button>
+
+  <script>
+    const firebaseConfig = { /* একই কনফিগ উপরের মতো */ 
+      apiKey: "AIzaSyDpv3NaTYjrmeoN19itDACcvEpMggd72H8",
+      authDomain: "url-c576f.firebaseapp.com",
+      projectId: "url-c576f",
+      storageBucket: "url-c576f.firebasestorage.app",
+      messagingSenderId: "681639648878",
+      appId: "1:681639648878:web:31d36b7e0c8031c806d07f",
+      measurementId: "G-HKS96B2T7T"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let adUrl = "";
+    let contentUrl = "";
+    let firstClick = true;
+
+    // URL থেকে আইডি নেওয়া
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('id');
+
+    if (!id) {
+      document.body.innerHTML = "<h2>Invalid Link!</h2>";
+    } else {
+      loadLink();
+    }
+
+    async function loadLink() {
+      const doc = await db.collection("links").doc(id).get();
+      if (doc.exists) {
+        const data = doc.data();
+        adUrl = data.adUrl;
+        contentUrl = data.contentUrl;
+        document.getElementById("previewImg").src = data.imageUrl;
+
+        // টোটাল ভিজিট +১
+        db.collection("stats").doc("visits").set({
+          count: firebase.firestore.FieldValue.increment(1)
+        }, {merge: true});
+      } else {
+        document.body.innerHTML = "<h2>Link Expired or Not Found!</h2>";
+      }
+    }
+
+    function goToAd() {
+      if (adUrl) window.location.href = adUrl;
+    }
+
+    // Final Continue Button
+    document.getElementById("finalBtn").onclick = () => {
+      document.getElementById("finalBtn").style.display = "none";
+      document.getElementById("countdown").style.display = "block";
+
+      let time =  = 5;
+      const timer = setInterval(() => {
+        time--;
+        document.getElementById("countdown").innerText = time;
+        if (time <= 0) {
+          clearInterval(timer);
+          document.getElementById("countdown").innerText = "Your Link Almost Ready!";
+          document.getElementById("getLinkBtn").style.display = "block";
+        }
+      }, 1000);
+    };
+
+    function finalRedirect() {
+      if (firstClick) {
+        firstClick = false;
+        window.location.href = adUrl;  // প্রথমে এড
+      } else {
+        window.location.href = contentUrl;  // দ্বিতীয়বার কনটেন্ট
+      }
+    }
+  </script>
+</body>
+</html>
